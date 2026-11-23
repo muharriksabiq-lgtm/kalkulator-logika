@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kalkulator Validitas Argumen Logika</title>
+  <style>
+    :root {
+      --primary: #059669;         /* Hijau zamrud untuk tombol Hitung & aksen utama */
+      --primary-hover: #047857;
+      --accent-green: #34d399;
+      --blue-btn: #2563eb;        /* Biru solid untuk Tambah Premis & Tombol Simbol */
+      --blue-hover: #1d4ed8;
+      --blue-border: #3b82f6;
+      --red-btn: #dc2626;         /* Merah tegas untuk tombol hapus (X) */
+      --red-hover: #b91c1c;
+      --bg: #121110;              /* Latar luar gelap pekat */
+      --card: #1c1a17;            /* Kotak utama */
+      --input-bg: #141311;        /* Kotak ketik */
+      --text-main: #ede8e0;       /* Teks krem hangat */
+      --text-muted: #9c9284;      /* Teks keterangan */
+      --border: #332e28;          /* Garis batas */
+      --critical-row: #18362c;    /* Sorotan baris kritis valid (Hijau) */
+      --counter-row: #451a1a;     /* Sorotan baris penyangkal invalid (Merah) */
+      --valid-bg: #172e22;
+      --valid-text: #6ee7b7;
+      --invalid-bg: #3b1818;
+      --invalid-text: #fca5a5;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--bg);
+      color: var(--text-main);
+      line-height: 1.6;
+      padding: 30px 20px 120px 20px; /* Ruang scroll ekstra di bawah agar tombol tetap diam dari klik pertama */
+    }
+
+    .container {
+      width: 100%;
+      max-width: 960px;
+      margin: 0 auto;
+      background-color: var(--card);
+      padding: 32px 36px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+    }
+
+    h1 {
+      color: var(--text-main);
+      margin-bottom: 10px;
+      font-weight: 700;
+      font-size: 1.75rem;
+    }
+
+    .guide-box {
+      color: var(--text-muted);
+      font-size: 0.92rem;
+      margin-bottom: 14px;
+    }
+
+    .guide-box strong {
+      color: var(--text-main);
+    }
+
+    /* =========================================================
+       TOMBOL SISIPKAN SIMBOL (BIRU, BESAR, & BERBENTUK TOMBOL 3D)
+       ========================================================= */
+    .symbol-section {
+      margin-bottom: 22px;
+      padding-bottom: 18px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .symbol-title {
+      display: block;
+      font-weight: 600;
+      color: var(--text-main);
+      margin-bottom: 10px;
+      font-size: 0.95rem;
+    }
+
+    .symbol-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .sym-btn {
+      background-color: #1e3a5f;
+      color: #ffffff;
+      border: 1px solid var(--blue-border);
+      border-bottom: 3px solid #172554;
+      padding: 9px 15px;
+      border-radius: 6px;
+      font-family: 'Consolas', 'Courier New', monospace;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.35);
+      transition: all 0.12s ease;
+    }
+
+    .sym-btn:hover {
+      background-color: var(--blue-btn);
+      border-color: #60a5fa;
+      transform: translateY(-1px);
+    }
+
+    .sym-btn:active {
+      transform: translateY(1px);
+      border-bottom-width: 1px;
+    }
+
+    /* =========================================================
+       BARIS INPUT PREMIS & KONKLUSI
+       ========================================================= */
+    .premise-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .premise-label {
+      min-width: 115px;
+      font-weight: 600;
+      color: var(--text-main);
+      font-size: 0.95rem;
+    }
+
+    .premise-input {
+      flex: 1;
+      background-color: var(--input-bg);
+      color: var(--text-main);
+      border: 1px solid var(--border);
+      padding: 10px 14px;
+      border-radius: 6px;
+      font-family: 'Consolas', 'Courier New', monospace;
+      font-size: 1rem;
+      outline: none;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .premise-input:focus {
+      border-color: var(--accent-green);
+      box-shadow: 0 0 0 2px rgba(52, 211, 153, 0.15);
+    }
+
+    .premise-input::placeholder {
+      color: var(--text-muted);
+      opacity: 0.55;
+    }
+
+    .conclusion-divider {
+      border: none;
+      border-top: 1px dashed var(--border);
+      margin: 16px 0;
+    }
+
+    /* =========================================================
+       TOMBOL HAPUS PREMIS (X) -> MERAH TEGAS
+       ========================================================= */
+    .btn-remove {
+      background-color: var(--red-btn);
+      color: #ffffff;
+      border: 1px solid #ef4444;
+      border-bottom: 3px solid #7f1d1d;
+      padding: 9px 14px;
+      border-radius: 6px;
+      font-weight: 700;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.12s ease;
+    }
+
+    .btn-remove:hover {
+      background-color: var(--red-hover);
+      transform: translateY(-1px);
+    }
+
+    /* =========================================================
+       TOMBOL AKSI: TAMBAH PREMIS (BIRU) & HITUNG (HIJAU)
+       ========================================================= */
+    .action-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 22px;
+    }
+
+    .btn-add {
+      background-color: var(--blue-btn);
+      color: #ffffff;
+      border: 1px solid var(--blue-border);
+      border-bottom: 3px solid #1e3a8a;
+      padding: 11px 20px;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+      transition: all 0.12s ease;
+    }
+
+    .btn-add:hover {
+      background-color: var(--blue-hover);
+      transform: translateY(-1px);
+    }
+
+    .btn-calc {
+      background-color: var(--primary);
+      color: #ffffff;
+      border: 1px solid #34d399;
+      border-bottom: 3px solid #064e3b;
+      padding: 11px 28px;
+      border-radius: 6px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+      transition: all 0.12s ease;
+    }
+
+    .btn-calc:hover {
+      background-color: var(--primary-hover);
+      transform: translateY(-1px);
+    }
+
+    /* =========================================================
+       BANNER HASIL & TABEL KEBENARAN
+       ========================================================= */
+    #result-banner {
+      margin-top: 24px;
+      padding: 16px 20px;
+      border-radius: 6px;
+      font-size: 1rem;
+      border: 1px solid transparent;
+    }
+
+    #result-banner:empty {
+      display: none;
+    }
+
+    .valid-banner {
+      background-color: var(--valid-bg);
+      color: var(--valid-text);
+      border-color: #2d5a43 !important;
+    }
+
+    .invalid-banner {
+      background-color: var(--invalid-bg);
+      color: var(--invalid-text);
+      border-color: #7f2d2d !important;
+    }
+
+    .badge-valid {
+      background-color: #16a34a;
+      color: #ffffff;
+      padding: 4px 12px;
+      border-radius: 5px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      display: inline-block;
+    }
+
+    .badge-invalid {
+      background-color: #dc2626;
+      color: #ffffff;
+      padding: 4px 12px;
+      border-radius: 5px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      display: inline-block;
+    }
+
+    #table-container {
+      margin-top: 24px;
+      width: 100%;
+      overflow-x: auto;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+    }
+
+    #table-container:empty {
+      display: none;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: 'Consolas', 'Courier New', monospace;
+      font-size: 0.95rem;
+      text-align: center;
+    }
+
+    th {
+      background-color: #141311;
+      color: var(--accent-green);
+      font-weight: 700;
+      padding: 12px 10px;
+      border: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    td {
+      padding: 9px 10px;
+      border: 1px solid var(--border);
+      color: var(--text-main);
+    }
+
+    tbody tr:nth-child(even) {
+      background-color: rgba(20, 19, 17, 0.45);
+    }
+
+    tbody tr:hover {
+      background-color: rgba(52, 211, 153, 0.08);
+    }
+
+    /* Baris Kritis VALID (Semua Premis B, Konklusi B) -> Hijau */
+    tr.critical-row {
+      background-color: var(--critical-row) !important;
+      color: #a7f3d0;
+      font-weight: bold;
+    }
+
+    tr.critical-row td:last-child {
+      color: #34d399;
+    }
+
+    /* Baris Penyangkal INVALID / Counterexample (Semua Premis B, Konklusi S) -> Merah */
+    tr.counterexample-row {
+      background-color: var(--counter-row) !important;
+      color: #fecaca;
+      font-weight: bold;
+    }
+
+    tr.counterexample-row td:last-child {
+      color: #f87171;
+    }
+
+    /* Legenda Keterangan Warna Baris */
+    .legend {
+      margin-top: 14px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      font-size: 0.88rem;
+      color: var(--text-muted);
+    }
+
+    .legend:empty {
+      display: none;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .box-green {
+      width: 16px;
+      height: 16px;
+      background-color: var(--critical-row);
+      border: 1px solid #34d399;
+      border-radius: 3px;
+    }
+
+    .box-red {
+      width: 16px;
+      height: 16px;
+      background-color: var(--counter-row);
+      border: 1px solid #f87171;
+      border-radius: 3px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>Kalkulator Validitas Argumen Logika</h1>
+  <div class="guide-box">
+    <p><strong>Panduan Penulisan Simbol:</strong> Gunakan huruf tunggal untuk variabel (misal: <code>P, Q, R, V</code>).</p>
+    <p><strong>Operator yang didukung:</strong> Negasi (<code>~</code>), Konjungsi (<code>^</code>), Disjungsi (<code>\/</code>), Implikasi (<code>-&gt;</code>), Biimplikasi (<code>&lt;-&gt;</code>).</p>
+  </div>
+
+  <div class="symbol-section">
+    <span class="symbol-title">Sisipkan Simbol:</span>
+    <div class="symbol-toolbar">
+      <button type="button" class="sym-btn" onclick="insertSymbol('~')">~ (Negasi)</button>
+      <button type="button" class="sym-btn" onclick="insertSymbol(' ^ ')">^ (Konjungsi)</button>
+      <button type="button" class="sym-btn" onclick="insertSymbol(' \\/ ')">\/ (Disjungsi)</button>
+      <button type="button" class="sym-btn" onclick="insertSymbol(' -> ')">-&gt; (Implikasi)</button>
+      <button type="button" class="sym-btn" onclick="insertSymbol(' <-> ')">&lt;-&gt; (Biimplikasi)</button>
+      <button type="button" class="sym-btn" onclick="insertSymbol('()')">( )</button>
+    </div>
+  </div>
+
+  <div id="premises-container">
+    <div class="premise-row">
+      <span class="premise-label">Premis 1:</span>
+      <input type="text" class="premise-input" placeholder="Masukkan Premis" onfocus="activeInput = this">
+      <button type="button" class="btn-remove" onclick="removePremise(this)">X</button>
+    </div>
+    <div class="premise-row">
+      <span class="premise-label">Premis 2:</span>
+      <input type="text" class="premise-input" placeholder="Masukkan Premis" onfocus="activeInput = this">
+      <button type="button" class="btn-remove" onclick="removePremise(this)">X</button>
+    </div>
+  </div>
+
+  <hr class="conclusion-divider">
+
+  <div class="premise-row">
+    <span class="premise-label">Konklusi (&there4;):</span>
+    <input type="text" id="conclusion-input" class="premise-input" placeholder="Masukkan Konklusi" onfocus="activeInput = this">
+    <button type="button" class="btn-remove" style="visibility: hidden;" aria-hidden="true">X</button>
+  </div>
+
+  <div class="action-buttons">
+    <button type="button" class="btn-add" onclick="addPremise()">+ Tambah Premis</button>
+    <button type="button" class="btn-calc" onclick="evaluateArgument()">Hitung Tabel &amp; Cek Validitas</button>
+  </div>
+
+  <div id="result-banner"></div>
+  <div id="table-container"></div>
+  <div id="table-legend" class="legend"></div>
+</div>
+
+<script>
+  let activeInput = document.querySelector('.premise-input');
+
+  function insertSymbol(sym) {
+    if (!activeInput) {
+      activeInput = document.querySelector('.premise-input');
+    }
+    const start = activeInput.selectionStart;
+    const end = activeInput.selectionEnd;
+    const text = activeInput.value;
+    activeInput.value = text.substring(0, start) + sym + text.substring(end);
+    activeInput.focus();
+    const cursorPos = sym === '()' ? start + 1 : start + sym.length;
+    activeInput.setSelectionRange(cursorPos, cursorPos);
+  }
+
+  // Sistem dinamis "Tambah Premis" dengan batas maksimal 10 premis & tombol tetap diam di ujung kursor
+  function addPremise() {
+    const container = document.getElementById('premises-container');
+
+    if (container.children.length >= 10) {
+      alert("Batas kapasitas tercapai: Sistem dibatasi maksimal 10 premis untuk menjaga kestabilan memori dan komputasi browser.");
+      return;
+    }
+
+    const beforeHeight = container.offsetHeight;
+
+    const count = container.children.length + 1;
+    const div = document.createElement('div');
+    div.className = 'premise-row';
+    div.innerHTML = `
+      <span class="premise-label">Premis ${count}:</span>
+      <input type="text" class="premise-input" placeholder="Masukkan Premis" onfocus="activeInput = this">
+      <button type="button" class="btn-remove" onclick="removePremise(this)">X</button>
+    `;
+    container.appendChild(div);
+    updatePremiseLabels();
+
+    const addedHeight = container.offsetHeight - beforeHeight;
+    window.scrollBy(0, addedHeight);
+  }
+
+  function removePremise(btn) {
+    const container = document.getElementById('premises-container');
+    if (container.children.length <= 1) {
+      alert("Minimal harus terdapat 1 premis!");
+      return;
+    }
+
+    // Catat tinggi wadah sebelum baris dihapus
+    const beforeHeight = container.offsetHeight;
+
+    btn.parentElement.remove();
+    updatePremiseLabels();
+
+    // Gulir layar turun sebesar tinggi yang berkurang agar tombol X di atasnya turun tepat ke ujung kursor
+    const removedHeight = beforeHeight - container.offsetHeight;
+    window.scrollBy(0, -removedHeight);
+  }
+
+  function updatePremiseLabels() {
+    const rows = document.querySelectorAll('#premises-container .premise-row');
+    rows.forEach((row, index) => {
+      const num = index + 1;
+      row.querySelector('.premise-label').textContent = `Premis ${num}:`;
+    });
+  }
+
+  // Mesin Parsing & Evaluasi Logika Proposisi (Mendukung \/ untuk disjungsi & variabel V)
+  function compileExpression(expr, vars) {
+    let clean = expr.replace(/\s+/g, '');
+    if (!clean) throw new Error("Ekspresi tidak boleh kosong.");
+
+    if (/[^A-Za-z~!^&|\-><()/\\]/.test(clean)) {
+      throw new Error(`Terdapat simbol tidak dikenal pada "${expr}".`);
+    }
+
+    let balance = 0;
+    for (let ch of clean) {
+      if (ch === '(') balance++;
+      if (ch === ')') balance--;
+      if (balance < 0) throw new Error(`Tanda kurung tidak seimbang pada "${expr}".`);
+    }
+    if (balance !== 0) throw new Error(`Tanda kurung belum ditutup pada "${expr}".`);
+
+    let jsExpr = clean
+      .replace(/\\\//g, '|')
+      .replace(/!/g, '~')
+      .replace(/&/g, '^');
+
+    const tokens = [];
+    let i = 0;
+    while (i < jsExpr.length) {
+      const ch = jsExpr[i];
+      if (/[A-Za-z]/.test(ch)) {
+        tokens.push({ type: 'VAR', value: ch.toUpperCase() });
+        i++;
+      } else if (ch === '(' || ch === ')') {
+        tokens.push({ type: ch, value: ch });
+        i++;
+      } else if (ch === '~' || ch === '^' || ch === '|') {
+        tokens.push({ type: 'OP', value: ch });
+        i++;
+      } else if (jsExpr.slice(i, i + 2) === '->') {
+        tokens.push({ type: 'OP', value: '->' });
+        i += 2;
+      } else if (jsExpr.slice(i, i + 3) === '<->') {
+        tokens.push({ type: 'OP', value: '<->' });
+        i += 3;
+      } else {
+        throw new Error(`Sintaks salah di sekitar "${jsExpr.slice(i)}" pada "${expr}".`);
+      }
+    }
+
+    let pos = 0;
+    function peek() { return tokens[pos]; }
+    function consume() { return tokens[pos++]; }
+
+    function parseBiImpl() {
+      let left = parseImpl();
+      while (peek() && peek().value === '<->') {
+        consume();
+        let right = parseImpl();
+        const l = left, r = right;
+        left = (env) => l(env) === r(env);
+      }
+      return left;
+    }
+
+    function parseImpl() {
+      let left = parseOr();
+      if (peek() && peek().value === '->') {
+        consume();
+        let right = parseImpl();
+        const l = left, r = right;
+        left = (env) => (!l(env)) || r(env);
+      }
+      return left;
+    }
+
+    function parseOr() {
+      let left = parseAnd();
+      while (peek() && peek().value === '|') {
+        consume();
+        let right = parseAnd();
+        const l = left, r = right;
+        left = (env) => l(env) || r(env);
+      }
+      return left;
+    }
+
+    function parseAnd() {
+      let left = parseNot();
+      while (peek() && peek().value === '^') {
+        consume();
+        let right = parseNot();
+        const l = left, r = right;
+        left = (env) => l(env) && r(env);
+      }
+      return left;
+    }
+
+    function parseNot() {
+      if (peek() && peek().value === '~') {
+        consume();
+        let operand = parseNot();
+        return (env) => !operand(env);
+      }
+      return parsePrimary();
+    }
+
+    function parsePrimary() {
+      const tok = peek();
+      if (!tok) throw new Error(`Ekspresi tidak lengkap pada "${expr}".`);
+      if (tok.type === 'VAR') {
+        consume();
+        return (env) => env[tok.value];
+      }
+      if (tok.type === '(') {
+        consume();
+        let inner = parseBiImpl();
+        if (!peek() || peek().type !== ')') {
+          throw new Error(`Kurung tutup ')' hilang pada "${expr}".`);
+        }
+        consume();
+        return inner;
+      }
+      throw new Error(`Token tidak terduga "${tok.value}" pada "${expr}".`);
+    }
+
+    const evaluator = parseBiImpl();
+    if (pos < tokens.length) {
+      throw new Error(`Kesalahan penulisan operator di sekitar "${tokens[pos].value}" pada "${expr}".`);
+    }
+    return evaluator;
+  }
+
+  function evaluateArgument() {
+    const premiseInputs = Array.from(document.querySelectorAll('#premises-container .premise-input'));
+    const conclusionInput = document.getElementById('conclusion-input');
+    const banner = document.getElementById('result-banner');
+    const tableContainer = document.getElementById('table-container');
+    const legendContainer = document.getElementById('table-legend');
+
+    const premises = premiseInputs.map(inp => inp.value.trim()).filter(val => val !== '');
+    const conclusion = conclusionInput.value.trim();
+
+    if (premises.length === 0 || !conclusion) {
+      alert("Harap isi minimal 1 premis dan konklusi sebelum menghitung!");
+      return;
+    }
+
+    const allExpressions = [...premises, conclusion].join(' ');
+    const varMatches = allExpressions.match(/[A-Za-z]/g) || [];
+    const variables = Array.from(new Set(varMatches.map(v => v.toUpperCase()))).sort();
+
+    if (variables.length === 0) {
+      alert("Tidak ditemukan variabel proposisi (contoh: P, Q, R).");
+      return;
+    }
+
+    let compiledPremises, compiledConclusion;
+    try {
+      compiledPremises = premises.map(p => compileExpression(p, variables));
+      compiledConclusion = compileExpression(conclusion, variables);
+    } catch (err) {
+      alert("Kesalahan Sintaks Logika:\n" + err.message);
+      return;
+    }
+
+    const totalRows = Math.pow(2, variables.length);
+    let isValid = true;
+    let counterexampleRow = -1;
+
+    let html = '<table><thead><tr>';
+    html += '<th>Baris</th>';
+    variables.forEach(v => { html += `<th>${v}</th>`; });
+    premises.forEach((p, idx) => { html += `<th>P${idx + 1}: ${p}</th>`; });
+    html += `<th>Konklusi: ${conclusion}</th>`;
+    html += '<th>Status Baris</th>';
+    html += '</tr></thead><tbody>';
+
+    for (let r = 0; r < totalRows; r++) {
+      const env = {};
+      variables.forEach((v, idx) => {
+        const bit = (r >> (variables.length - 1 - idx)) & 1;
+        env[v] = bit === 0;
+      });
+
+      const premiseResults = compiledPremises.map(fn => fn(env));
+      const conclusionResult = compiledConclusion(env);
+
+      const allPremisesTrue = premiseResults.every(val => val === true);
+      let rowClass = '';
+      let statusText = '-';
+
+      if (allPremisesTrue && conclusionResult) {
+        rowClass = 'critical-row';
+        statusText = 'Benar';
+      } else if (allPremisesTrue && !conclusionResult) {
+        rowClass = 'counterexample-row';
+        statusText = 'Salah';
+        if (isValid) {
+          isValid = false;
+          counterexampleRow = r + 1;
+        }
+      }
+
+      html += `<tr class="${rowClass}">`;
+      html += `<td>${r + 1}</td>`;
+      variables.forEach(v => {
+        html += `<td>${env[v] ? 'B' : 'S'}</td>`;
+      });
+      premiseResults.forEach(res => {
+        html += `<td>${res ? 'B' : 'S'}</td>`;
+      });
+      html += `<td>${conclusionResult ? 'B' : 'S'}</td>`;
+      html += `<td>${statusText}</td>`;
+      html += '</tr>';
+    }
+
+    html += '</tbody></table>';
+    tableContainer.innerHTML = html;
+
+    if (isValid) {
+      banner.className = 'valid-banner';
+      banner.innerHTML = `
+        <div style="margin-bottom: 8px;">
+          HASIL: <span class="badge-valid">ARGUMEN VALID</span>
+        </div>
+        <p style="margin: 0; font-size: 0.95rem;">Tidak ditemukan bukti penyangkal. Pada setiap baris kritis di mana seluruh premis bernilai Benar (B), konklusinya selalu bernilai Benar (B).</p>
+      `;
+    } else {
+      banner.className = 'invalid-banner';
+      banner.innerHTML = `
+        <div style="margin-bottom: 8px;">
+          HASIL: <span class="badge-invalid">ARGUMEN INVALID</span>
+        </div>
+        <p style="margin: 0; font-size: 0.95rem;">Ditemukan bukti penyangkal pada <b>Baris ke-${counterexampleRow}</b>, di mana seluruh premis bernilai Benar (B) namun konklusinya bernilai Salah (S).</p>
+      `;
+    }
+
+    legendContainer.innerHTML = `
+      <div class="legend-item">
+        <span class="box-green"></span>
+        <span>Baris Kritis Valid (Semua Premis B, Konklusi B)</span>
+      </div>
+      <div class="legend-item">
+        <span class="box-red"></span>
+        <span>Counterexample / Invalid (Semua Premis B, Konklusi S)</span>
+      </div>
+    `;
+  }
+</script>
+</body>
+</html>
